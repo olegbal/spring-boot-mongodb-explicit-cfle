@@ -1,0 +1,5 @@
+spring:
+  data:
+    mongodb:
+      uri: mongodb://localhost:27017/test?authSource=admin
+      master-key: M2QzZTM1OGU2MzFkZTc1NjVlNTM5OGY2ZTc4ZDg5ZDY4YTcwOTRhNjU3YTA1MjZmYjRmYTU1OWY1OTBiNmRkOWNmMzZjYjEyNTU1NjFiZjE3NzI2ZTdjYzE3MjIxZGNl
