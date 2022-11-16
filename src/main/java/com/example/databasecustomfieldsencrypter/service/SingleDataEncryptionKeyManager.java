@@ -7,6 +7,7 @@ import com.mongodb.client.vault.ClientEncryption;
 
 import org.bson.BsonBinary;
 import org.bson.Document;
+import org.bson.types.Binary;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.stereotype.Service;
@@ -45,7 +46,7 @@ public class SingleDataEncryptionKeyManager implements DataEncryptionKeyManager 
       Document first = collection.find().first();
 
       if (!Objects.isNull(first)) {
-        dataEncryptionKey = first.get("keyMaterial", BsonBinary.class);
+        dataEncryptionKey = new BsonBinary(first.get("_id", Binary.class).getData());
       } else {
         dataEncryptionKey = clientEncryption.createDataKey(mongoKmsProvider.getName());
       }
