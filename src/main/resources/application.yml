@@ -2,4 +2,10 @@ spring:
   data:
     mongodb:
       uri: mongodb://localhost:27017/test?authSource=admin
-      master-key: M2QzZTM1OGU2MzFkZTc1NjVlNTM5OGY2ZTc4ZDg5ZDY4YTcwOTRhNjU3YTA1MjZmYjRmYTU1OWY1OTBiNmRkOWNmMzZjYjEyNTU1NjFiZjE3NzI2ZTdjYzE3MjIxZGNl
+      encryption:
+        enabled: true
+        keyvault:
+          database: encryption
+          collection: __keyVault
+          provider: local
+        master-key: 4681d69d42a880c261590cae1028682425690f32125628697d9d0871fd17fc4fd581d7f13d25d52c9a5420f09873b69f

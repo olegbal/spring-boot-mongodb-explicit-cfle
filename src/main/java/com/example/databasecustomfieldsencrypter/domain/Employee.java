@@ -1,6 +1,6 @@
 package com.example.databasecustomfieldsencrypter.domain;
 
-import com.example.databasecustomfieldsencrypter.annotation.EncryptedField;
+import com.example.databasecustomfieldsencrypter.annotation.Encrypted;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -19,7 +19,7 @@ public class Employee {
   private String id;
 
   @Field
-  @EncryptedField
+  @Encrypted
   private String fieldToEncrypt;
 
 }
