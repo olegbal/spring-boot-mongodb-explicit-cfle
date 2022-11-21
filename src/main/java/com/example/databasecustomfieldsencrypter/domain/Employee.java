@@ -21,5 +21,11 @@ public class Employee {
   @Field
   @Encrypted
   private String fieldToEncrypt;
+  
+  @Field
+  @Encrypted
+  private SomeNestedClass someNestedClass;
+  
+  
 
 }

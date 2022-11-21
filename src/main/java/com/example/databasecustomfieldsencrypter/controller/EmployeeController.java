@@ -1,6 +1,7 @@
 package com.example.databasecustomfieldsencrypter.controller;
 
 import com.example.databasecustomfieldsencrypter.domain.Employee;
+import com.example.databasecustomfieldsencrypter.domain.SomeNestedClass;
 import com.example.databasecustomfieldsencrypter.repository.EmployeeRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +22,8 @@ public class EmployeeController {
   @PostMapping("/create")
   public ResponseEntity<Employee> create() {
 
-    Employee secretString = employeeRepository.save(new Employee("1", "SecretString"));
+    Employee secretString = employeeRepository.save(new Employee("1", "SecretString",
+        new SomeNestedClass("Nested secret", 142L)));
 
     return new ResponseEntity<>(secretString, HttpStatus.OK);
   }

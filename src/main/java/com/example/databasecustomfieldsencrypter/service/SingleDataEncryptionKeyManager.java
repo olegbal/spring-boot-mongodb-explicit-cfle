@@ -34,11 +34,9 @@ public class SingleDataEncryptionKeyManager implements DataEncryptionKeyManager 
     this.mongoTemplate = mongoTemplate;
   }
 
-
   @Override
   public BsonBinary getKey() {
     if (Objects.isNull(dataEncryptionKey)) {
-      //    TODO check if key already exists
 
       MongoCollection<Document> collection = mongoTemplate.getMongoDatabaseFactory()
           .getMongoDatabase(keyVaultMongoNameSpace.getDatabaseName())
