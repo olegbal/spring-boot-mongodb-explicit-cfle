@@ -4,6 +4,7 @@ spring:
       uri: mongodb://localhost:27017/test?authSource=admin
       encryption:
         enabled: true
+        algorithm: AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic
         keyvault:
           database: encryption
           collection: __keyVault

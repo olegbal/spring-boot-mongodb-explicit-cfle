@@ -1,15 +1,11 @@
 package com.example.databasecustomfieldsencrypter.eventlistener;
 
 import com.example.databasecustomfieldsencrypter.annotation.Encrypted;
+import com.example.databasecustomfieldsencrypter.encryption.SimplifiedClientEncryption;
 import com.example.databasecustomfieldsencrypter.domain.Employee;
-import com.example.databasecustomfieldsencrypter.service.DataEncryptionKeyManager;
-import com.mongodb.client.model.vault.EncryptOptions;
-import com.mongodb.client.vault.ClientEncryption;
 
 import org.bson.BsonBinary;
 import org.bson.BsonBinarySubType;
-import org.bson.BsonString;
-import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.Binary;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +14,7 @@ import org.springframework.data.mongodb.core.mapping.event.AbstractMongoEventLis
 import org.springframework.data.mongodb.core.mapping.event.AfterLoadEvent;
 import org.springframework.data.mongodb.core.mapping.event.BeforeSaveEvent;
 import org.springframework.stereotype.Component;
+import org.springframework.util.SerializationUtils;
 
 import java.lang.reflect.Field;
 import java.util.Arrays;
@@ -29,10 +26,31 @@ import java.util.stream.Collectors;
 public class EncryptionMongoDbEventListener extends AbstractMongoEventListener<Object> {
 
   @Autowired
-  private ClientEncryption clientEncryption;
+  private SimplifiedClientEncryption clientEncryption;
 
-  @Autowired
-  private DataEncryptionKeyManager dataEncryptionKeyManager;
+  @Override
+  public void onAfterLoad(AfterLoadEvent<Object> event) {
+    List<Field> classMemberField = Arrays.asList(Employee.class.getDeclaredFields());
+
+    List<Field> encryptedFields = classMemberField.stream()
+        .filter(field -> field.isAnnotationPresent(Encrypted.class)).collect(Collectors.toList());
+
+    Document loadedDocument = event.getDocument();
+
+    encryptedFields.forEach(field -> {
+      if (loadedDocument.containsKey(field.getName())) {
+        Binary value = loadedDocument.get(field.getName(), Binary.class);
+
+        BsonBinary decryptedField = clientEncryption.decrypt(
+            new BsonBinary(BsonBinarySubType.ENCRYPTED, value.getData())).asBinary();
+
+        loadedDocument.put(field.getName(),
+            SerializationUtils.deserialize(decryptedField.getData()));
+      }
+    });
+
+    super.onAfterLoad(event);
+  }
 
   @Override
   public void onBeforeSave(BeforeSaveEvent<Object> event) {
@@ -42,42 +60,20 @@ public class EncryptionMongoDbEventListener extends AbstractMongoEventListener<O
         .filter(field -> field.isAnnotationPresent(Encrypted.class))
         .collect(Collectors.toList());
 
-    Document convertedEntity = event.getDocument();
+    Document document = event.getDocument();
 
     encryptedFields.forEach(field -> {
+      if (document.containsKey(field.getName())) {
+        Object value = document.get(field.getName());
 
-      String value = (String) convertedEntity.get(field.getName());
+        BsonBinary valueAsBsonBinary = new BsonBinary(SerializationUtils.serialize(value));
 
-      BsonBinary encryptedFieldValue = clientEncryption.encrypt(new BsonString(value),
-          new EncryptOptions("AEAD_AES_256_CBC_HMAC_SHA_512-Deterministic").keyId(
-              dataEncryptionKeyManager.getKey()));
+        BsonBinary encryptedFieldValue = clientEncryption.encrypt(valueAsBsonBinary);
 
-      convertedEntity.put(field.getName(), encryptedFieldValue);
+        document.put(field.getName(), encryptedFieldValue);
+      }
     });
 
     super.onBeforeSave(event);
-  }
-
-  @Override
-  public void onAfterLoad(AfterLoadEvent<Object> event) {
-    List<Field> classMemberField = Arrays.asList(Employee.class.getDeclaredFields());
-
-    List<Field> encryptedFields = classMemberField.stream()
-        .filter(field -> field.isAnnotationPresent(Encrypted.class))
-        .collect(Collectors.toList());
-
-    Document loadedDocument = event.getDocument();
-
-    encryptedFields.forEach(field -> {
-
-      Binary value = loadedDocument.get(field.getName(), Binary.class);
-
-      BsonValue decryptedField = clientEncryption.decrypt(
-          new BsonBinary(BsonBinarySubType.ENCRYPTED, value.getData()));
-
-      loadedDocument.put(field.getName(), decryptedField.asString().getValue());
-    });
-
-    super.onAfterLoad(event);
   }
 }

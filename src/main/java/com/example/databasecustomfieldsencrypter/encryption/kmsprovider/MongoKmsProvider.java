@@ -1,4 +1,4 @@
-package com.example.databasecustomfieldsencrypter.config;
+package com.example.databasecustomfieldsencrypter.encryption.kmsprovider;
 
 import java.util.Map;
 
