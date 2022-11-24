@@ -2,7 +2,6 @@ package com.example.databasecustomfieldsencrypter.eventlistener;
 
 import com.example.databasecustomfieldsencrypter.annotation.Encrypted;
 import com.example.databasecustomfieldsencrypter.encryption.SimplifiedClientEncryption;
-import com.example.databasecustomfieldsencrypter.domain.Employee;
 
 import org.bson.BsonBinary;
 import org.bson.BsonBinarySubType;
@@ -30,7 +29,7 @@ public class EncryptionMongoDbEventListener extends AbstractMongoEventListener<O
 
   @Override
   public void onAfterLoad(AfterLoadEvent<Object> event) {
-    List<Field> classMemberField = Arrays.asList(Employee.class.getDeclaredFields());
+    List<Field> classMemberField = Arrays.asList(event.getType().getDeclaredFields());
 
     List<Field> encryptedFields = classMemberField.stream()
         .filter(field -> field.isAnnotationPresent(Encrypted.class)).collect(Collectors.toList());
@@ -54,7 +53,7 @@ public class EncryptionMongoDbEventListener extends AbstractMongoEventListener<O
 
   @Override
   public void onBeforeSave(BeforeSaveEvent<Object> event) {
-    List<Field> classMemberField = Arrays.asList(Employee.class.getDeclaredFields());
+    List<Field> classMemberField = Arrays.asList(event.getSource().getClass().getDeclaredFields());
 
     List<Field> encryptedFields = classMemberField.stream()
         .filter(field -> field.isAnnotationPresent(Encrypted.class))
