@@ -18,6 +18,8 @@ import org.springframework.util.SerializationUtils;
 import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Component
@@ -36,42 +38,48 @@ public class EncryptionMongoDbEventListener extends AbstractMongoEventListener<O
 
     Document loadedDocument = event.getDocument();
 
-    encryptedFields.forEach(field -> {
-      if (loadedDocument.containsKey(field.getName())) {
-        Binary value = loadedDocument.get(field.getName(), Binary.class);
+    if (!Objects.isNull(loadedDocument)) {
 
-        BsonBinary decryptedField = clientEncryption.decrypt(
-            new BsonBinary(BsonBinarySubType.ENCRYPTED, value.getData())).asBinary();
+      encryptedFields.forEach(field -> {
+        if (loadedDocument.containsKey(field.getName())) {
 
-        loadedDocument.put(field.getName(),
-            SerializationUtils.deserialize(decryptedField.getData()));
-      }
-    });
+          Optional.ofNullable(loadedDocument.get(field.getName())).ifPresent((value -> {
+            byte[] encryptedBytes = loadedDocument.get(field.getName(), Binary.class).getData();
 
+            BsonBinary decryptedField = clientEncryption.decrypt(
+                new BsonBinary(BsonBinarySubType.ENCRYPTED, encryptedBytes)).asBinary();
+
+            loadedDocument.put(field.getName(),
+                SerializationUtils.deserialize(decryptedField.getData()));
+          }));
+        }
+      });
+    }
     super.onAfterLoad(event);
   }
 
   @Override
   public void onBeforeSave(BeforeSaveEvent<Object> event) {
     List<Field> classMemberField = Arrays.asList(event.getSource().getClass().getDeclaredFields());
-
     List<Field> encryptedFields = classMemberField.stream()
         .filter(field -> field.isAnnotationPresent(Encrypted.class))
         .collect(Collectors.toList());
 
     Document document = event.getDocument();
 
-    encryptedFields.forEach(field -> {
-      if (document.containsKey(field.getName())) {
-        Object value = document.get(field.getName());
+    if (!Objects.isNull(document)) {
 
-        BsonBinary valueAsBsonBinary = new BsonBinary(SerializationUtils.serialize(value));
+      encryptedFields.forEach(field -> {
+        if (document.containsKey(field.getName())) {
+          Optional.ofNullable(document.get(field.getName())).ifPresent((value -> {
 
-        BsonBinary encryptedFieldValue = clientEncryption.encrypt(valueAsBsonBinary);
-
-        document.put(field.getName(), encryptedFieldValue);
-      }
-    });
+            BsonBinary valueAsBsonBinary = new BsonBinary(SerializationUtils.serialize(value));
+            BsonBinary encryptedFieldValue = clientEncryption.encrypt(valueAsBsonBinary);
+            document.put(field.getName(), encryptedFieldValue);
+          }));
+        }
+      });
+    }
 
     super.onBeforeSave(event);
   }
